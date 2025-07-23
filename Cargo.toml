@@ -1,0 +1,7 @@
+[package]
+name = "geometry-test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iced = { branch = "master", git = "https://github.com/iced-rs/iced.git", features = ["advanced", "hot"] }
