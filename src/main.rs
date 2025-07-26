@@ -11,17 +11,18 @@ use test::Rainbow;
 mod test {
     use std::ops::{Mul, Sub};
 
-    use iced::Renderer;
     use iced::advanced::graphics::{color, mesh};
     use iced::advanced::layout::{self, Layout};
     use iced::advanced::renderer::{self, Quad};
     use iced::advanced::widget::{self, Tree, Widget, tree};
+    use iced::gradient::{ColorStop, Linear};
     use iced::widget::Container;
     use iced::{
-        Color, Element, Length, Point, Rectangle, Size, Theme, Transformation, Vector, advanced,
-        application, border,
+        Border, Color, Element, Length, Point, Rectangle, Size, Theme, Transformation, Vector,
+        advanced, application, border,
     };
     use iced::{Event, mouse};
+    use iced::{Gradient, Renderer};
 
     pub fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Color {
         let c = v * s;
@@ -41,10 +42,6 @@ mod test {
         } else {
             (c, 0.0, x)
         };
-
-        println!("h:{} s:{} v:{}", h, s, v);
-
-        println!("r{} g{} b{}", r + m, g + m, b + m);
 
         Color::from_rgb(r + m, g + m, b + m)
     }
@@ -145,15 +142,36 @@ mod test {
                     renderer.fill_quad(
                         Quad {
                             bounds: Rectangle {
-                                x: state.saturation,
-                                y: state.value,
+                                x: state.saturation - 8.0,
+                                y: state.value - 8.0,
                                 width: 16.0,
                                 height: 16.0,
                             },
-                            border: border::rounded(10),
+                            border: Border {
+                                color: Color::BLACK,
+                                width: 1.5,
+                                radius: 10.into(),
+                            },
                             ..Default::default()
                         },
-                        Color::BLACK,
+                        Color::TRANSPARENT,
+                    );
+                    renderer.fill_quad(
+                        Quad {
+                            bounds: Rectangle {
+                                x: state.saturation - 7.0,
+                                y: state.value - 7.0,
+                                width: 14.0,
+                                height: 14.0,
+                            },
+                            border: Border {
+                                color: Color::WHITE,
+                                width: 1.5,
+                                radius: 10.into(),
+                            },
+                            ..Default::default()
+                        },
+                        Color::TRANSPARENT,
                     );
                 });
             });
@@ -178,7 +196,7 @@ mod test {
                 Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                     state.is_dragging = false;
                 }
-                Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
+                Event::Mouse(mouse::Event::CursorMoved { position }) => {
                     // bounds.width, bounds.height = hue
                     // bounds.width/5, 0.0 = BLACK
                     // 0.0, bounds.width = WHITE
@@ -189,13 +207,17 @@ mod test {
                                 .height
                                 .sub(position_over.x.mul(2.0))
                                 .abs()
-                                .clamp(0.0, bounds.height);
+                                .clamp(0.0, bounds.width);
 
                             if position_over.y >= min_y {
                                 let actual_y = position_over.y.clamp(min_y, bounds.height);
                                 state.value = actual_y;
                                 state.saturation = position_over.x;
                                 shell.request_redraw();
+                                println!(
+                                    "mouse position: {position} value: {actual_y} saturation: {}",
+                                    position_over.x
+                                );
                             } else {
                                 state.is_dragging = false;
                             }
