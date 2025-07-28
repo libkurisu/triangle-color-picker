@@ -79,6 +79,8 @@ mod test {
         }
     }
 
+    const SELECTOR_SIZE: f32 = 16.0;
+
     impl<'a, Message> Widget<Message, Theme, Renderer> for Rainbow<'a, Message> {
         fn layout(
             &self,
@@ -142,10 +144,10 @@ mod test {
                     renderer.fill_quad(
                         Quad {
                             bounds: Rectangle {
-                                x: state.saturation - 8.0,
-                                y: state.value - 8.0,
-                                width: 16.0,
-                                height: 16.0,
+                                x: state.saturation - SELECTOR_SIZE / 2.0,
+                                y: state.value - SELECTOR_SIZE / 2.0,
+                                width: SELECTOR_SIZE,
+                                height: SELECTOR_SIZE,
                             },
                             border: Border {
                                 color: Color::BLACK,
@@ -156,13 +158,16 @@ mod test {
                         },
                         Color::TRANSPARENT,
                     );
+
+                    let inner_selector_size = SELECTOR_SIZE - 2.0;
+
                     renderer.fill_quad(
                         Quad {
                             bounds: Rectangle {
-                                x: state.saturation - 7.0,
-                                y: state.value - 7.0,
-                                width: 14.0,
-                                height: 14.0,
+                                x: state.saturation - inner_selector_size / 2.0,
+                                y: state.value - inner_selector_size / 2.0,
+                                width: inner_selector_size,
+                                height: inner_selector_size,
                             },
                             border: Border {
                                 color: Color::WHITE,
@@ -196,11 +201,7 @@ mod test {
                 Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                     state.is_dragging = false;
                 }
-                Event::Mouse(mouse::Event::CursorMoved { position }) => {
-                    // bounds.width, bounds.height = hue
-                    // bounds.width/5, 0.0 = BLACK
-                    // 0.0, bounds.width = WHITE
-
+                Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
                     if let Some(position_over) = cursor.position_in(bounds) {
                         if state.is_dragging {
                             let min_y = bounds
@@ -214,21 +215,14 @@ mod test {
                                 state.value = actual_y;
                                 state.saturation = position_over.x;
                                 shell.request_redraw();
-                                println!(
-                                    "mouse position: {position} value: {actual_y} saturation: {}",
-                                    position_over.x
-                                );
-                            } else {
-                                state.is_dragging = false;
-                            }
-
-                            if let Some(on_stop) = &self.on_pick_message {
-                                shell.publish(on_stop(hsv_to_rgb(
-                                    self.hue,
-                                    state.saturation / bounds.width,
-                                    state.value / bounds.height,
-                                )));
-                            }
+                                if let Some(on_stop) = &self.on_pick_message {
+                                    shell.publish(on_stop(hsv_to_rgb(
+                                        self.hue,
+                                        state.saturation / bounds.width,
+                                        state.value / bounds.height,
+                                    )));
+                                }
+                            };
                         }
                     }
                 }
@@ -255,7 +249,7 @@ mod test {
     struct State {
         is_dragging: bool,
         value: f32,
-        saturation: f32, //        picker_position: Point<f32>,
+        saturation: f32,
     }
 
     impl State {
@@ -273,7 +267,7 @@ mod test {
             Self {
                 is_dragging: false,
                 value: 0.0,
-                saturation: 0.0, //              picker_position: Point::new(, ),
+                saturation: 0.0,
             }
         }
     }
@@ -304,21 +298,24 @@ enum Message {
 impl App {
     fn view(&self) -> Element<'_, Message> {
         let color_picker = Rainbow::new(0.0).on_color_pick(|color| Message::ColorChange(color));
+        println!("kittens are cute!");
+        println!("how many days are there in a yera");
 
         let content = center_x(
             widget::Column::new()
-                .push(color_picker)
+                .push(Container::new(color_picker).max_width(500).max_height(500))
                 .padding(20)
                 .spacing(20)
-                .push(Text::new("Hello, World!").color(self.color).size(100))
-                .max_width(600),
+                .push(Text::new("Hello, World!").color(self.color).size(100)),
         );
 
         center_y(content).into()
     }
     fn update(&mut self, message: Message) {
         match message {
-            Message::ColorChange(color) => self.color = color,
+            Message::ColorChange(color) => {
+                self.color = color;
+            }
         }
     }
 }
